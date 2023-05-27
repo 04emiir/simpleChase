@@ -6,111 +6,60 @@ using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] public float speed;
-    [SerializeField] public float turnspeed;
-    [SerializeField] private float jumpForce;
-    public GameObject panel;
-    public TextMeshProUGUI tiempotexto;
-    public float tiempo;
-
+    public float velocidad;
+    public float salto;
     Rigidbody rb;
-    Vector3 inputsPlayer;
     bool grounded;
-    bool puedemoverse = true;
+    bool canMove = true;
+    public Timer timer;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        panel.SetActive(false);
+        timer = GameObject.FindObjectOfType<Timer>();
     }
 
     private void FixedUpdate()
     {
-        if (puedemoverse)
+        if (canMove)
         {
             Move();
-            Look();
         }
     }
     void Update()
     {
-        GetInpunts();
-        Salto();
-        if(puedemoverse)
-        tiempo += Time.deltaTime;
+        Jump();
     }
 
-    void Look() //giro 
-    {
-        if (inputsPlayer != Vector3.zero)
-        {
-            var relative = (transform.position + inputsPlayer) - transform.position;
-            var rot = Quaternion.LookRotation(relative, Vector3.up);
-
-            transform.rotation = Quaternion.Slerp(transform.rotation, rot, turnspeed);
-
-        }
-
-    }
-    void GetInpunts()
-    {
-
-        inputsPlayer = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-
-    }
 
     void Move()
     {
-
-        inputsPlayer = Vector3.Normalize(inputsPlayer);
-        rb.MovePosition(transform.position + (transform.forward * inputsPlayer.magnitude) * speed * Time.deltaTime);
-
+        Vector3 m_Input = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        rb.MovePosition(transform.position + m_Input.normalized * Time.deltaTime * velocidad);
     }
 
-    void Salto()
+    void Jump()
     {
-
-
-        if (Input.GetKeyDown(KeyCode.Space) && grounded ==true)
-        {
-            rb.AddForce(new Vector3(0, jumpForce, 0), ForceMode.Impulse);
-
-        }
-
+        if (Input.GetKeyDown(KeyCode.Space) && grounded == true)
+            rb.AddForce(new Vector3(0, salto, 0), ForceMode.Impulse);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if(collision.gameObject.tag == "NPC")
-        {
-            puedemoverse = false;
-            panel.SetActive(true);
-
-            string formatoTiempo = string.Format("Time: {0:00}:{1:00}", Mathf.FloorToInt(tiempo / 60f), Mathf.FloorToInt(tiempo % 60f));
-            tiempotexto.text = formatoTiempo;
-
-            
+        if (collision.gameObject.tag == "NPC") {
+            canMove = false;
+            timer.pillado = true;
         }
     }
     private void OnCollisionStay(Collision collision)
     {
         if(collision.gameObject.tag == "ground")
-        {
             grounded = true;
-        }
-        
     }
 
     private void OnCollisionExit(Collision collision)
     {
         if (collision.gameObject.tag == "ground")
-        {
             grounded = false;
-        }
-    }
-
-    public void ReiniciarNivel()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
